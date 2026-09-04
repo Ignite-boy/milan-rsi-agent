@@ -1,0 +1,54 @@
+name: MILAN RSI Repair Agent
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["CI", "Milan Sentinel", "Deploy"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  repair:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install RSI dependencies
+        run: |
+          npm init -y
+          npm install openai
+
+      - name: Run autonomous repair loop
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          RSI_MODEL: ${{ vars.RSI_MODEL }}
+        run: node scripts/rsi-loop.js
+
+      - name: Verify repository
+        run: |
+          git diff --check
+          git status --short
+
+      - name: Commit repair
+        run: |
+          git config user.name "milan-rsi-agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "RSI: automatic failure repair"
+
+      - name: Push repair
+        run: git push
