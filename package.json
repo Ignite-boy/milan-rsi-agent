@@ -1,0 +1,12 @@
+{
+  "name": "milan-rsi-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MILAN autonomous recursive self-improvement repair and deployment agent",
+  "type": "commonjs",
+  "scripts": {
+    "rsi": "node scripts/rsi-loop.js",
+    "validate": "node ../milan-sentinel/scripts/run-matrix.js --validate",
+    "smoke": "node ../milan-sentinel/scripts/run-matrix.js --smoke"
+  }
+}
